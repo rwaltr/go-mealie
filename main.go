@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type RecipeSummaries []struct {
@@ -46,13 +48,18 @@ type Recipe struct {
 	} `json:"extras"`
 }
 
+// TODO Use config object
 func main() {
-	mealieURL := os.Getenv("MEALIE_URL")
+	viper.SetEnvPrefix("MEALIE")
+	viper.BindEnv("url")
+	viper.BindEnv("token")
+	mealieURL := viper.GetString("url")
+	mealietoken := viper.GetString("token")
+
 	if mealieURL == "" {
 		fmt.Println("Mealie URL is required")
 		os.Exit(1)
 	}
-	mealietoken := os.Getenv("MEALIE_TOKEN")
 	if mealietoken == "" {
 		fmt.Println("Mealie token is required")
 		os.Exit(1)
@@ -97,11 +104,11 @@ func main() {
 	// 	fmt.Printf("name: %s\nDescription: %s\nSlug:%s\n\n", name.Name, name.Description, name.Slug)
 
 	// }
-	results, err := grabRecipe(mealieURL, mealietoken, "authentic-keto-cornbread")
+	_, err := grabRecipe(mealieURL, mealietoken, "authentic-keto-cornbread")
 	if err != nil {
 		fmt.Println(err)
 	}
-	
+
 }
 
 func csvViewRecipe(recipe Recipe) error {
