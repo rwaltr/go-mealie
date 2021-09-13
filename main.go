@@ -10,6 +10,42 @@ import (
 	"strings"
 )
 
+type RecipeSummaries []struct {
+	ID             int      `json:"id"`
+	Name           string   `json:"name"`
+	Slug           string   `json:"slug"`
+	Image          string   `json:"image"`
+	Description    string   `json:"description"`
+	RecipeCategory []string `json:"recipeCategory"`
+	Tags           []string `json:"tags"`
+	Rating         int      `json:"rating"`
+	DateAdded      string   `json:"dateAdded"`
+	DateUpdated    string   `json:"dateUpdated"`
+}
+
+type Recipe struct {
+	Name               string   `json:"name"`
+	Description        string   `json:"description"`
+	Image              string   `json:"image"`
+	RecipeYield        string   `json:"recipe_yield"`
+	RecipeIngredient   []string `json:"recipe_ingredient"`
+	RecipeInstructions []struct {
+		Text string `json:"text"`
+	} `json:"recipe_instructions"`
+	Slug           string   `json:"slug"`
+	Tags           []string `json:"tags"`
+	RecipeCategory []string `json:"recipe_category"`
+	Notes          []struct {
+		Title string `json:"title"`
+		Text  string `json:"text"`
+	} `json:"notes"`
+	OrgURL string `json:"org_url"`
+	Rating int    `json:"rating"`
+	Extras struct {
+		Message string `json:"message"`
+	} `json:"extras"`
+}
+
 func main() {
 	mealieURL := os.Getenv("MEALIE_URL")
 	if mealieURL == "" {
@@ -47,11 +83,63 @@ func main() {
 
 	// Todo: Recipe View Function
 
-	recipeslug, err := scrapeurl(mealieURL, mealietoken, "https://www.allrecipes.com/recipe/232061/baja-style-fish-tacos")
+	// recipeslug, err := scrapeurl(mealieURL, mealietoken, "https://www.allrecipes.com/recipe/17205/eggs-benedict/")
+	// if err != nil {
+	// 	fmt.Print(err)
+	// }
+	// fmt.Println(recipeslug)
+
+	// results, err := allrecipessummary(mealieURL, mealietoken)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// for _, name := range results {
+	// 	fmt.Printf("name: %s\nDescription: %s\nSlug:%s\n\n", name.Name, name.Description, name.Slug)
+
+	// }
+	results, err := grabRecipe(mealieURL, mealietoken, "authentic-keto-cornbread")
 	if err != nil {
-		fmt.Print(err)
+		fmt.Println(err)
 	}
-	fmt.Println(recipeslug)
+	
+}
+
+func csvViewRecipe(recipe Recipe) error {
+	return nil
+}
+
+func prettyViewRecipe(recipe Recipe) error {
+	fmt.Println("Printed Recipe")
+	return nil
+}
+
+func grabRecipeDownloadendpoint(recipe Recipe) string {
+	endpoint := "/api/recipes/" + recipe.Slug + "/zip"
+	return endpoint
+}
+
+func grabRecipe(url string, token string, recipeslug string) (Recipe, error) {
+	var result Recipe
+	response, err := sendreq(url+"/api/recipes/"+recipeslug, token, "GET", "")
+	if err != nil {
+		return result, err
+	}
+
+	json.Unmarshal(response, &result)
+
+	return result, nil
+}
+
+func allrecipessummary(url string, token string) (RecipeSummaries, error) {
+
+	response, err := sendreq(url+"/api/recipes/summary?start=0&limit=9999", token, "GET", "")
+	if err != nil {
+		return nil, err
+	}
+	var results RecipeSummaries
+	json.Unmarshal(response, &results)
+
+	return results, nil
 }
 
 func scrapeurl(url string, token string, url2scrape string) (string, error) {
@@ -62,19 +150,15 @@ func scrapeurl(url string, token string, url2scrape string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	response, statuscode, err := sendreq(url+"/api/recipes/create-url/", token, "POST", string(requestbody))
+	response, err := sendreq(url+"/api/recipes/create-url/", token, "POST", string(requestbody))
 	if err != nil {
 		return "", err
-	}
-
-	if statuscode != 201 {
-		return "", errors.New("Non 201 Status")
 	}
 
 	return string(response), nil
 }
 
-func sendreq(url string, token string, reqtype string, body string) ([]byte, int, error) {
+func sendreq(url string, token string, reqtype string, body string) ([]byte, error) {
 
 	digestedbody := strings.NewReader(body)
 
@@ -86,16 +170,20 @@ func sendreq(url string, token string, reqtype string, body string) ([]byte, int
 	client := &http.Client{}
 	response, err := client.Do(req)
 	if err != nil {
-		return nil, -1, err
+		return nil, err
+	}
+	if !(response.StatusCode >= 200 && response.StatusCode < 300) {
+		errMsg := fmt.Sprintf("An Error has Occurred Durring Statuscode %d", response.StatusCode)
+		return nil, errors.New(errMsg)
 	}
 
 	responseData, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, -1, err
+		return nil, err
 	}
 
 	//var result map[string]interface{}
 	//json.Unmarshal([]byte(responseData), &result)
 
-	return responseData, response.StatusCode, nil
+	return responseData, nil
 }
