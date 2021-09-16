@@ -25,27 +25,87 @@ type RecipeSummaries []struct {
 	DateUpdated    string   `json:"dateUpdated"`
 }
 
+// type Recipe struct {
+// 	Name             string `json:"name"`
+// 	Description      string `json:"description"`
+// 	Image            string `json:"image"`
+// 	RecipeYield      string `json:"recipe_yield"`
+// 	RecipeIngredient []struct {
+// 		Title          string `json:"title"`
+// 		Note           string `json:"note"`
+// 		Unit           string `json:"unit"`
+// 		Food           string `json:"food"`
+// 		Disableammount bool   `json:"disableAmount"`
+// 		Quantity       int    `json:"quantity"`
+// 	} `json:"recipe_ingredient"`
+// 	RecipeInstructions []struct {
+// 		Text string `json:"text"`
+// 	} `json:"recipe_instructions"`
+// 	Slug           string   `json:"slug"`
+// 	Tags           []string `json:"tags"`
+// 	RecipeCategory []string `json:"recipe_category"`
+// 	Notes          []struct {
+// 		Title string `json:"title"`
+// 		Text  string `json:"text"`
+// 	} `json:"notes"`
+// 	OrgURL string `json:"orgURL"`
+// 	Rating int    `json:"rating"`
+// 	Extras struct {
+// 		Message string `json:"message"`
+// 	} `json:"extras"`
+// }
+
 type Recipe struct {
-	Name               string   `json:"name"`
-	Description        string   `json:"description"`
-	Image              string   `json:"image"`
-	RecipeYield        string   `json:"recipe_yield"`
-	RecipeIngredient   []string `json:"recipe_ingredient"`
+	ID               int           `json:"id"`
+	Name             string        `json:"name"`
+	Slug             string        `json:"slug"`
+	Image            string        `json:"image"`
+	Description      string        `json:"description"`
+	RecipeCategory   []interface{} `json:"recipeCategory"`
+	Tags             []interface{} `json:"tags"`
+	Rating           interface{}   `json:"rating"`
+	DateAdded        string        `json:"dateAdded"`
+	DateUpdated      string        `json:"dateUpdated"`
+	RecipeYield      string        `json:"recipeYield"`
+	RecipeIngredient []struct {
+		Title         interface{} `json:"title"`
+		Note          string      `json:"note"`
+		Unit          interface{} `json:"unit"`
+		Food          interface{} `json:"food"`
+		DisableAmount bool        `json:"disableAmount"`
+		Quantity      int         `json:"quantity"`
+	} `json:"recipeIngredient"`
 	RecipeInstructions []struct {
-		Text string `json:"text"`
-	} `json:"recipe_instructions"`
-	Slug           string   `json:"slug"`
-	Tags           []string `json:"tags"`
-	RecipeCategory []string `json:"recipe_category"`
-	Notes          []struct {
 		Title string `json:"title"`
 		Text  string `json:"text"`
-	} `json:"notes"`
-	OrgURL string `json:"org_url"`
-	Rating int    `json:"rating"`
+	} `json:"recipeInstructions"`
+	Nutrition struct {
+		Calories            interface{} `json:"calories"`
+		FatContent          interface{} `json:"fatContent"`
+		ProteinContent      interface{} `json:"proteinContent"`
+		CarbohydrateContent interface{} `json:"carbohydrateContent"`
+		FiberContent        interface{} `json:"fiberContent"`
+		SodiumContent       interface{} `json:"sodiumContent"`
+		SugarContent        interface{} `json:"sugarContent"`
+	} `json:"nutrition"`
+	Tools       []interface{} `json:"tools"`
+	TotalTime   string        `json:"totalTime"`
+	PrepTime    string        `json:"prepTime"`
+	PerformTime string        `json:"performTime"`
+	Settings    struct {
+		Public          bool `json:"public"`
+		ShowNutrition   bool `json:"showNutrition"`
+		ShowAssets      bool `json:"showAssets"`
+		LandscapeView   bool `json:"landscapeView"`
+		DisableComments bool `json:"disableComments"`
+		DisableAmount   bool `json:"disableAmount"`
+	} `json:"settings"`
+	Assets []interface{} `json:"assets"`
+	Notes  []interface{} `json:"notes"`
+	OrgURL string        `json:"orgURL"`
 	Extras struct {
-		Message string `json:"message"`
 	} `json:"extras"`
+	Comments []interface{} `json:"comments"`
 }
 
 // TODO Use config object
@@ -104,19 +164,40 @@ func main() {
 	// 	fmt.Printf("name: %s\nDescription: %s\nSlug:%s\n\n", name.Name, name.Description, name.Slug)
 
 	// }
-	_, err := grabRecipe(mealieURL, mealietoken, "authentic-keto-cornbread")
+
+	myrecipe, err := grabRecipe(mealieURL, mealietoken, "loaded-smashed-potatoes")
 	if err != nil {
 		fmt.Println(err)
 	}
+	prettyViewRecipe(myrecipe)
 
-}
-
-func csvViewRecipe(recipe Recipe) error {
-	return nil
 }
 
 func prettyViewRecipe(recipe Recipe) error {
-	fmt.Println("Printed Recipe")
+	fmt.Printf("# %s\n\n## Description: %s\n\nServings: %s\n\nMealie URL: %s\n\nOriginal Url: %s\n\n",
+		recipe.Name,
+		recipe.Description,
+		recipe.RecipeYield,
+		viper.GetString("url")+"/recipe/"+recipe.Slug,
+		recipe.OrgURL)
+	fmt.Println("## Recipe List")
+	for i := range recipe.RecipeIngredient {
+		if recipe.RecipeIngredient[i].DisableAmount == false {
+			fmt.Printf("%s %s %s %s\n",
+				string(recipe.RecipeIngredient[i].Quantity),
+				recipe.RecipeIngredient[i].Unit,
+				recipe.RecipeIngredient[i].Title,
+				recipe.RecipeIngredient[i].Note)
+		} else {
+			fmt.Printf("- %s\n", string(recipe.RecipeIngredient[i].Note))
+		}
+	}
+	fmt.Printf("\n\n## Instructions\n")
+	for i := range recipe.RecipeInstructions {
+		fmt.Printf("- %s\n\n", recipe.RecipeInstructions[i].Text)
+
+	}
+
 	return nil
 }
 
@@ -188,9 +269,6 @@ func sendreq(url string, token string, reqtype string, body string) ([]byte, err
 	if err != nil {
 		return nil, err
 	}
-
-	//var result map[string]interface{}
-	//json.Unmarshal([]byte(responseData), &result)
 
 	return responseData, nil
 }
