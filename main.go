@@ -29,36 +29,6 @@ type mealieConfig struct {
 	Token string `mapstructure:"token"`
 }
 
-// type Recipe struct {
-// 	Name             string `json:"name"`
-// 	Description      string `json:"description"`
-// 	Image            string `json:"image"`
-// 	RecipeYield      string `json:"recipe_yield"`
-// 	RecipeIngredient []struct {
-// 		Title          string `json:"title"`
-// 		Note           string `json:"note"`
-// 		Unit           string `json:"unit"`
-// 		Food           string `json:"food"`
-// 		Disableammount bool   `json:"disableAmount"`
-// 		Quantity       int    `json:"quantity"`
-// 	} `json:"recipe_ingredient"`
-// 	RecipeInstructions []struct {
-// 		Text string `json:"text"`
-// 	} `json:"recipe_instructions"`
-// 	Slug           string   `json:"slug"`
-// 	Tags           []string `json:"tags"`
-// 	RecipeCategory []string `json:"recipe_category"`
-// 	Notes          []struct {
-// 		Title string `json:"title"`
-// 		Text  string `json:"text"`
-// 	} `json:"notes"`
-// 	OrgURL string `json:"orgURL"`
-// 	Rating int    `json:"rating"`
-// 	Extras struct {
-// 		Message string `json:"message"`
-// 	} `json:"extras"`
-// }
-
 type Recipe struct {
 	ID               int           `json:"id"`
 	Name             string        `json:"name"`
