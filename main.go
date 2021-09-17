@@ -11,6 +11,142 @@ import (
 	"github.com/spf13/viper"
 )
 
+type Client struct {
+	config     *mealieConfig
+	httpClient http.Client
+}
+
+func InitClient(c *mealieConfig) *Client {
+
+	return &Client{
+		config:     c,
+		httpClient: http.Client{},
+	}
+}
+
+func (c *Client) GetHTTP(endpoint string, responsebody interface{}) error {
+	// TODO, Make more flexable
+	fullUrl := fmt.Sprintf("%s/api/%s", c.config.Url, endpoint)
+	req, err := http.NewRequest("GET", fullUrl, nil)
+	fmt.Println("Sending GET request to: " + fullUrl)
+
+	req.Header.Set("Authorization", "Bearer "+c.config.Token)
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+
+	response, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if !(response.StatusCode >= 200 && response.StatusCode < 300) {
+		errMsg := fmt.Sprintf("An Error has Occurred Durring Statuscode %d", response.StatusCode)
+		return errors.New(errMsg)
+	}
+
+	defer response.Body.Close()
+
+	return json.NewDecoder(response.Body).Decode(responsebody)
+}
+
+func (c *Client) PostHTTPGetString(endpoint string, body string) (string, error) {
+	// TODO, Make more flexable
+	fullUrl := fmt.Sprintf("%s/api/%s", c.config.Url, endpoint)
+	req, err := http.NewRequest("POST", fullUrl, strings.NewReader(body))
+	fmt.Println("Sending POST request to: " + fullUrl)
+	fmt.Println("")
+
+	req.Header.Set("Authorization", "Bearer "+c.config.Token)
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+
+	response, err := c.httpClient.Do(req)
+
+	if !(response.StatusCode >= 200 && response.StatusCode < 300) {
+		errMsg := fmt.Sprintf("An Error has Occurred Durring Statuscode %d", response.StatusCode)
+		return "", errors.New(errMsg)
+	}
+
+	defer response.Body.Close()
+	r, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return "", err
+	}
+	rr := strings.Trim(string(r), "\"")
+
+	return string(rr), nil
+}
+
+func (c *Client) getRecipe(slug string) (Recipe, error) {
+	var r Recipe
+	if err := c.GetHTTP("recipes/"+slug, &r); err != nil {
+		return r, err
+	}
+
+	return r, nil
+
+}
+
+func (c *Client) allRecipesSummaries() (RecipeSummaries, error) {
+	var r RecipeSummaries
+	if err := c.GetHTTP("recipes/summary?start=0&limit=9999", &r); err != nil {
+		return r, err
+	}
+
+	return r, nil
+}
+
+func grabRecipeDownloadEndpoint(recipe Recipe) string {
+	r := fmt.Sprintf("%s/api/recipes/%s/zip")
+	return r
+}
+
+func prettyViewRecipe(recipe Recipe) error {
+	fmt.Printf("# %s\n\n## Description: %s\n\nServings: %s\n\nMealie URL: %s\n\nOriginal Url: %s\n\n",
+		recipe.Name,
+		recipe.Description,
+		recipe.RecipeYield,
+		viper.GetString("url")+"/recipe/"+recipe.Slug,
+		recipe.OrgURL)
+	fmt.Println("## Recipe List")
+	for i := range recipe.RecipeIngredient {
+		if recipe.RecipeIngredient[i].DisableAmount == false {
+			fmt.Printf("%s %s %s %s\n",
+				string(recipe.RecipeIngredient[i].Quantity),
+				recipe.RecipeIngredient[i].Unit,
+				recipe.RecipeIngredient[i].Title,
+				recipe.RecipeIngredient[i].Note)
+		} else {
+			fmt.Printf("- %s\n", string(recipe.RecipeIngredient[i].Note))
+		}
+	}
+	fmt.Printf("\n\n## Instructions\n")
+	for i := range recipe.RecipeInstructions {
+		fmt.Printf("- %s\n\n", recipe.RecipeInstructions[i].Text)
+
+	}
+
+	return nil
+}
+
+func (c *Client) scrapeurl(url2scrape string) (string, error) {
+
+	toscrape := map[string]interface{}{"url": url2scrape}
+
+	requestbody, err := json.Marshal(toscrape)
+	if err != nil {
+		return "", err
+	}
+	fmt.Printf("Formmated request for URL:%s,\n\n%s", url2scrape, string(requestbody))
+	//response, err := sendreq(url+"/api/recipes/create-url/", token, "POST", string(requestbody))
+	response, err := c.PostHTTPGetString("recipes/create-url", string(requestbody))
+	if err != nil {
+		return "", err
+	}
+
+	return string(response), nil
+}
+
 type RecipeSummaries []struct {
 	ID             int      `json:"id"`
 	Name           string   `json:"name"`
@@ -89,7 +225,30 @@ func main() {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(config)
+
+	c := InitClient(&config)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	resultSlug, err := c.scrapeurl("https://www.tasteofhome.com/recipes/frito-pie/")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(resultSlug)
+
+	resultRecipe, err := c.getRecipe(resultSlug)
+	if err != nil {
+		fmt.Println(err)
+	}
+	prettyViewRecipe(resultRecipe)
+
+	// var testRecipe Recipe
+	// if err := c.GetHTTP("recipes/keto-chicken-nuggets", &testRecipe); err != nil {
+	// 	fmt.Println(err)
+	// }
+	// fmt.Println(testRecipe.Name)
+
 	// response, err := sendreq(mealieURL+"/api/debug", mealietoken, "")
 	// if err != nil {
 	// 	fmt.Println("Request error:", err)
@@ -160,104 +319,4 @@ func loadConfig() (mealieConfig, error) {
 	}
 
 	return result, nil
-}
-
-func prettyViewRecipe(recipe Recipe) error {
-	fmt.Printf("# %s\n\n## Description: %s\n\nServings: %s\n\nMealie URL: %s\n\nOriginal Url: %s\n\n",
-		recipe.Name,
-		recipe.Description,
-		recipe.RecipeYield,
-		viper.GetString("url")+"/recipe/"+recipe.Slug,
-		recipe.OrgURL)
-	fmt.Println("## Recipe List")
-	for i := range recipe.RecipeIngredient {
-		if recipe.RecipeIngredient[i].DisableAmount == false {
-			fmt.Printf("%s %s %s %s\n",
-				string(recipe.RecipeIngredient[i].Quantity),
-				recipe.RecipeIngredient[i].Unit,
-				recipe.RecipeIngredient[i].Title,
-				recipe.RecipeIngredient[i].Note)
-		} else {
-			fmt.Printf("- %s\n", string(recipe.RecipeIngredient[i].Note))
-		}
-	}
-	fmt.Printf("\n\n## Instructions\n")
-	for i := range recipe.RecipeInstructions {
-		fmt.Printf("- %s\n\n", recipe.RecipeInstructions[i].Text)
-
-	}
-
-	return nil
-}
-
-func grabRecipeDownloadendpoint(recipe Recipe) string {
-	endpoint := "/api/recipes/" + recipe.Slug + "/zip"
-	return endpoint
-}
-
-func grabRecipe(url string, token string, recipeslug string) (Recipe, error) {
-	var result Recipe
-	response, err := sendreq(url+"/api/recipes/"+recipeslug, token, "GET", "")
-	if err != nil {
-		return result, err
-	}
-
-	json.Unmarshal(response, &result)
-
-	return result, nil
-}
-
-func allrecipessummary(url string, token string) (RecipeSummaries, error) {
-
-	response, err := sendreq(url+"/api/recipes/summary?start=0&limit=9999", token, "GET", "")
-	if err != nil {
-		return nil, err
-	}
-	var results RecipeSummaries
-	json.Unmarshal(response, &results)
-
-	return results, nil
-}
-
-func scrapeurl(url string, token string, url2scrape string) (string, error) {
-
-	toscrape := map[string]interface{}{"url": url2scrape}
-
-	requestbody, err := json.MarshalIndent(toscrape, "", "   ")
-	if err != nil {
-		return "", err
-	}
-	response, err := sendreq(url+"/api/recipes/create-url/", token, "POST", string(requestbody))
-	if err != nil {
-		return "", err
-	}
-
-	return string(response), nil
-}
-
-func sendreq(url string, token string, reqtype string, body string) ([]byte, error) {
-
-	digestedbody := strings.NewReader(body)
-
-	req, err := http.NewRequest(reqtype, url, digestedbody)
-	req.Header.Set("Authorization", "Bearer "+token)
-	req.Header.Set("accept", "application/json")
-	req.Header.Set("Content-Type", "application/json")
-
-	client := &http.Client{}
-	response, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if !(response.StatusCode >= 200 && response.StatusCode < 300) {
-		errMsg := fmt.Sprintf("An Error has Occurred Durring Statuscode %d", response.StatusCode)
-		return nil, errors.New(errMsg)
-	}
-
-	responseData, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return responseData, nil
 }
