@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -23,6 +22,11 @@ type RecipeSummaries []struct {
 	Rating         int      `json:"rating"`
 	DateAdded      string   `json:"dateAdded"`
 	DateUpdated    string   `json:"dateUpdated"`
+}
+
+type mealieConfig struct {
+	Url   string `mapstructure:"url"`
+	Token string `mapstructure:"token"`
 }
 
 // type Recipe struct {
@@ -110,21 +114,12 @@ type Recipe struct {
 
 // TODO Use config object
 func main() {
-	viper.SetEnvPrefix("MEALIE")
-	viper.BindEnv("url")
-	viper.BindEnv("token")
-	mealieURL := viper.GetString("url")
-	mealietoken := viper.GetString("token")
 
-	if mealieURL == "" {
-		fmt.Println("Mealie URL is required")
-		os.Exit(1)
+	config, err := loadConfig()
+	if err != nil {
+		fmt.Println(err)
 	}
-	if mealietoken == "" {
-		fmt.Println("Mealie token is required")
-		os.Exit(1)
-	}
-
+	fmt.Println(config)
 	// response, err := sendreq(mealieURL+"/api/debug", mealietoken, "")
 	// if err != nil {
 	// 	fmt.Println("Request error:", err)
@@ -165,12 +160,36 @@ func main() {
 
 	// }
 
-	myrecipe, err := grabRecipe(mealieURL, mealietoken, "loaded-smashed-potatoes")
-	if err != nil {
-		fmt.Println(err)
-	}
-	prettyViewRecipe(myrecipe)
+	// myrecipe, err := grabRecipe(mealieURL, mealietoken, "loaded-smashed-potatoes")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
+	// prettyViewRecipe(myrecipe)
 
+}
+
+func loadConfig() (mealieConfig, error) {
+	var result mealieConfig
+	viper.AddConfigPath("$XDG_CONFIG_HOME/go-mealie")
+	viper.AddConfigPath("$HOME/.config/go-mealie")
+	viper.AddConfigPath(".")
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.SetEnvPrefix("MEALIE")
+	viper.BindEnv("url")
+	viper.BindEnv("token")
+
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		return result, err
+	}
+
+	err = viper.Unmarshal(&result)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
 }
 
 func prettyViewRecipe(recipe Recipe) error {
