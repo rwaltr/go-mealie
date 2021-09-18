@@ -39,3 +39,27 @@ func PrettyViewRecipe(recipe model.Recipe) error {
 
 	return nil
 }
+
+func loadConfig() (model.MealieConfig, error) {
+	var result model.MealieConfig
+	viper.AddConfigPath("$XDG_CONFIG_HOME/go-mealie")
+	viper.AddConfigPath("$HOME/.config/go-mealie")
+	viper.AddConfigPath(".")
+	viper.SetConfigName("config")
+	viper.SetConfigType("yaml")
+	viper.SetEnvPrefix("MEALIE")
+	viper.BindEnv("url")
+	viper.BindEnv("token")
+
+	err := viper.ReadInConfig() // Find and read the config file
+	if err != nil {             // Handle errors reading the config file
+		return result, err
+	}
+
+	err = viper.Unmarshal(&result)
+	if err != nil {
+		return result, err
+	}
+
+	return result, nil
+}
