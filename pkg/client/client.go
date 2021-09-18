@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"strings"
 
@@ -41,6 +42,7 @@ func (c *Client) GetHTTP(endpoint string, responsebody interface{}) error {
 
 	if !(response.StatusCode >= 200 && response.StatusCode < 300) {
 		errMsg := fmt.Sprintf("An Error has Occurred Durring Statuscode %d", response.StatusCode)
+		log.Fatal(errMsg)
 		return errors.New(errMsg)
 	}
 
