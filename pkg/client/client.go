@@ -7,14 +7,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	model "github.com/rwaltr/go-mealie/pkg/model"
 )
 
 type Client struct {
-	config     *mealieConfig
+	config     *model.MealieConfig
 	httpClient http.Client
 }
 
-func InitClient(c *mealieConfig) *Client {
+func InitClient(c *model.MealieConfig) *Client {
 
 	return &Client{
 		config:     c,
@@ -73,4 +75,41 @@ func (c *Client) PostHTTPGetString(endpoint string, body string) (string, error)
 	rr := strings.Trim(string(r), "\"")
 
 	return string(rr), nil
+}
+
+func (c *Client) Scrapeurl(url2scrape string) (string, error) {
+
+	toscrape := map[string]interface{}{"url": url2scrape}
+
+	requestbody, err := json.Marshal(toscrape)
+	if err != nil {
+		return "", err
+	}
+	fmt.Printf("Formmated request for URL:%s,\n\n%s", url2scrape, string(requestbody))
+	//response, err := sendreq(url+"/api/recipes/create-url/", token, "POST", string(requestbody))
+	response, err := c.PostHTTPGetString("recipes/create-url", string(requestbody))
+	if err != nil {
+		return "", err
+	}
+
+	return string(response), nil
+}
+
+func (c *Client) GetRecipe(slug string) (model.Recipe, error) {
+	var r model.Recipe
+	if err := c.GetHTTP("recipes/"+slug, &r); err != nil {
+		return r, err
+	}
+
+	return r, nil
+
+}
+
+func (c *Client) AllRecipesSummaries() (model.RecipeSummaries, error) {
+	var r model.RecipeSummaries
+	if err := c.GetHTTP("recipes/summary?start=0&limit=9999", &r); err != nil {
+		return r, err
+	}
+
+	return r, nil
 }

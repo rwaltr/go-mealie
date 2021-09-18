@@ -2,16 +2,17 @@ package utils
 
 import (
 	"fmt"
-    "github.com/rwaltr/go-mealie/pkg/model"
+
+	model "github.com/rwaltr/go-mealie/pkg/model"
 	"github.com/spf13/viper"
 )
 
-func grabRecipeDownloadEndpoint(recipe Recipe) string {
+func GrabRecipeDownloadEndpoint(recipe model.Recipe) string {
 	r := fmt.Sprintf("%s/api/recipes/%s/zip")
 	return r
 }
 
-func prettyViewRecipe(recipe Recipe) error {
+func PrettyViewRecipe(recipe model.Recipe) error {
 	fmt.Printf("# %s\n\n## Description: %s\n\nServings: %s\n\nMealie URL: %s\n\nOriginal Url: %s\n\n",
 		recipe.Name,
 		recipe.Description,
