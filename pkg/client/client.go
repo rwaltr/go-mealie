@@ -51,6 +51,42 @@ func (c *Client) GetHTTP(endpoint string, responsebody interface{}) error {
 	return json.NewDecoder(response.Body).Decode(responsebody)
 }
 
+func (c *Client) DeleteHTTP(endpoint string, responsebody interface{}) error {
+	// TODO, Make more flexable
+	fullUrl := fmt.Sprintf("%s/api/%s", c.config.Url, endpoint)
+	req, err := http.NewRequest("DELETE", fullUrl, nil)
+	fmt.Println("Sending DELETE request to: " + fullUrl)
+
+	req.Header.Set("Authorization", "Bearer "+c.config.Token)
+	req.Header.Set("accept", "application/json")
+	req.Header.Set("Content-Type", "application/json")
+
+	response, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	if !(response.StatusCode >= 200 && response.StatusCode < 300) {
+		errMsg := fmt.Sprintf("An Error has Occurred Durring Statuscode %d", response.StatusCode)
+		log.Fatal(errMsg)
+		return errors.New(errMsg)
+	}
+
+	defer response.Body.Close()
+
+	return json.NewDecoder(response.Body).Decode(responsebody)
+}
+
+func (c *Client) DeleteRecipe(slug string) error {
+	// TODO, Make more flexable
+	var response string
+	err := c.DeleteHTTP("recipes/"+slug, &response)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return nil
+}
+
 func (c *Client) PostHTTPGetString(endpoint string, body string) (string, error) {
 	// TODO, Make more flexable
 	fullUrl := fmt.Sprintf("%s/api/%s", c.config.Url, endpoint)

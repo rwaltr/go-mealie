@@ -18,7 +18,10 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/rwaltr/go-mealie/pkg/client"
+	"github.com/rwaltr/go-mealie/pkg/utils"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // scrapeCmd represents the scrape command
@@ -31,10 +34,31 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("scrape called")
+		viper.ReadInConfig()
+		config, err := utils.LoadConfig()
+		if err != nil {
+			fmt.Println(err)
+		}
+		c := client.InitClient(&config)
+		response, err := c.Scrapeurl(args[0])
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(response)
+		if preview == true {
+			response, err := c.GetRecipe(response)
+			if err != nil {
+				fmt.Println(err)
+			}
+			utils.PrettyViewRecipe(response)
+		}
+
 	},
 }
+var preview bool
 
 func init() {
 	rootCmd.AddCommand(scrapeCmd)
@@ -48,4 +72,6 @@ func init() {
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
 	// scrapeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	scrapeCmd.Flags().BoolVarP(&preview, "preview", "p", false, "Preview scraped recipe")
+
 }

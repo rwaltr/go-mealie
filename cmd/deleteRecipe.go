@@ -24,9 +24,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-// debugCmd represents the debug command
-var debugCmd = &cobra.Command{
-	Use:   "debug",
+// deleteRecipeCmd represents the deleteRecipe command
+var deleteRecipeCmd = &cobra.Command{
+	Use:   "deleteRecipe",
 	Short: "A brief description of your command",
 	Long: `A longer description that spans multiple lines and likely contains examples
 and usage of using your command. For example:
@@ -34,35 +34,32 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
+	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("debug called")
-		fmt.Printf("URL from Viper is %s\nToken is %s\n", viper.GetString("url"), viper.GetString("token"))
 		viper.ReadInConfig()
 		config, err := utils.LoadConfig()
 		if err != nil {
 			fmt.Println(err)
 		}
-		fmt.Println(config)
 		c := client.InitClient(&config)
-		response, err := c.GetRecipe("frito-pie")
+		err = c.DeleteRecipe(args[0])
 		if err != nil {
 			fmt.Println(err)
 		}
-		utils.PrettyViewRecipe(response)
+
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(debugCmd)
+	rootCmd.AddCommand(deleteRecipeCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// debugCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// deleteRecipeCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// debugCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
-
+	// deleteRecipeCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
