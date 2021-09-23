@@ -14,9 +14,9 @@ jobs:
           go-version: 1.15.14
       - run: go version 
       - run: mkdir BUILD
-      - run: go build main.go -o mealie-cli
+      - run: go build -o mealie-cli
       - uses: actions/upload-artifact@v2
         with: 
           name: mealie-cli
-          path: BUILD/mealie-cli
+          path: mealie-cli
   
