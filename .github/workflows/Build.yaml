@@ -2,7 +2,7 @@ name: Build
 
 on:
   release:
-  workflow-dispatch:
+  workflow_dispatch:
 
 jobs:
   BUILD:
