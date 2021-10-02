@@ -47,7 +47,7 @@ checksum:
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 release:
-  draft: true
+  draft: false
 source:
   enabled: true
 changelog:
