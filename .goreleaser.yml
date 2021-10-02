@@ -22,6 +22,9 @@ archives:
       386: i386
       amd64: x86_64
     format: "tar.gz"
+    format_override:
+      - GOOS: windows
+        format: zip
 nfpms:
   - replacements:
       darwin: Darwin
@@ -31,7 +34,7 @@ nfpms:
       amd64: x86_64
     homepage: "https://github.com/rwaltr/go-mealie"
     maintainer: "Rwaltr"
-    description: "A simple Mealie Client based on Go"
+    description: "A simple Mealie client based on Go"
     license: Apache 2.0
     formats:
       - apk
