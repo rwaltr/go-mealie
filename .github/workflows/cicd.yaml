@@ -19,6 +19,6 @@ jobs:
         with:
           distribution: goreleaser
           version: latest
-          args: build --snapshot
+          args: build 
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
