@@ -1,0 +1,24 @@
+
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+
+
+jobs:
+  goreleaser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: GoSetup
+        uses: actions/setup-go@v2
+      - name: GoReleaser
+        uses: goreleaser/goreleaser-action@v2
+        with:
+          distribution: goreleaser
+          version: latest
+          args: build --snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
