@@ -22,8 +22,8 @@ archives:
       386: i386
       amd64: x86_64
     format: "tar.gz"
-    format_override:
-      - GOOS: windows
+    format_overrides:
+      - goos: windows
         format: zip
 nfpms:
   - replacements:
