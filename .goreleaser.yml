@@ -26,6 +26,10 @@ checksum:
   name_template: 'checksums.txt'
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
+release:
+  draft: true
+source:
+  enabled: true
 changelog:
   sort: asc
   filters:
