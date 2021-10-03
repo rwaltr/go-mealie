@@ -27,13 +27,8 @@ import (
 // scrapeCmd represents the scrape command
 var scrapeCmd = &cobra.Command{
 	Use:   "scrape",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Send a URL to Mealie to scrape and add to your recipebook",
+	Long: `Send a URL to Mealie to scrape and add to your recipebook`,
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		viper.ReadInConfig()
