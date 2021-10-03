@@ -118,7 +118,6 @@ func (c *Client) Scrapeurl(url2scrape string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Printf("Formmated request for URL:%s,\n\n%s", url2scrape, string(requestbody))
 	//response, err := sendreq(url+"/api/recipes/create-url/", token, "POST", string(requestbody))
 	response, err := c.PostHTTPGetString("recipes/create-url", string(requestbody))
 	if err != nil {
